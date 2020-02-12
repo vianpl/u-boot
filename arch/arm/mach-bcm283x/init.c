@@ -14,7 +14,9 @@
 #ifdef CONFIG_ARM64
 #include <asm/armv8/mmu.h>
 
-static struct mm_region bcm283x_mem_map[] = {
+#define BCM2711_MEM_MAP_SIZE	4
+
+static struct mm_region bcm283x_mem_map[BCM2711_MEM_MAP_SIZE] = {
 	{
 		.virt = 0x00000000UL,
 		.phys = 0x00000000UL,
@@ -49,6 +51,13 @@ static struct mm_region bcm2711_mem_map[] = {
 			 PTE_BLOCK_NON_SHARE |
 			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
 	}, {
+		.virt = 0x600000000UL,
+		.phys = 0x600000000UL,
+		.size = 0x40000000UL,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			 PTE_BLOCK_NON_SHARE |
+			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
+	}, {
 		/* List terminator */
 		0,
 	}
@@ -71,7 +80,7 @@ static void _rpi_update_mem_map(struct mm_region *pd)
 {
 	int i;
 
-	for (i = 0; i < 2; i++) {
+	for (i = 0; pd[i].size; i++) {
 		mem_map[i].virt = pd[i].virt;
 		mem_map[i].phys = pd[i].phys;
 		mem_map[i].size = pd[i].size;
