@@ -9,6 +9,7 @@
 #include <malloc.h>
 #include <linux/lzo.h>
 #include <linux/zstd.h>
+#include <linux/compat.h>
 #include <u-boot/zlib.h>
 #include <asm/unaligned.h>
 
@@ -17,6 +18,7 @@
 static u32 decompress_lzo(const u8 *cbuf, u32 clen, u8 *dbuf, u32 dlen)
 {
 	u32 tot_len, in_len, res;
+	u32 tot_in = 0;
 	size_t out_len;
 	int ret;
 
@@ -27,6 +29,7 @@ static u32 decompress_lzo(const u8 *cbuf, u32 clen, u8 *dbuf, u32 dlen)
 	cbuf += LZO_LEN;
 	clen -= LZO_LEN;
 	tot_len -= LZO_LEN;
+	tot_in += LZO_LEN;
 
 	if (tot_len == 0 && dlen)
 		return -1;
@@ -36,6 +39,9 @@ static u32 decompress_lzo(const u8 *cbuf, u32 clen, u8 *dbuf, u32 dlen)
 	res = 0;
 
 	while (tot_len > LZO_LEN) {
+		size_t mod_page;
+		size_t rem_page;
+
 		in_len = le32_to_cpu(get_unaligned((u32 *)cbuf));
 		cbuf += LZO_LEN;
 		clen -= LZO_LEN;
@@ -44,6 +50,7 @@ static u32 decompress_lzo(const u8 *cbuf, u32 clen, u8 *dbuf, u32 dlen)
 			return -1;
 
 		tot_len -= (LZO_LEN + in_len);
+		tot_in += (LZO_LEN + in_len);
 
 		out_len = dlen;
 		ret = lzo1x_decompress_safe(cbuf, in_len, dbuf, &out_len);
@@ -56,6 +63,19 @@ static u32 decompress_lzo(const u8 *cbuf, u32 clen, u8 *dbuf, u32 dlen)
 		dlen -= out_len;
 
 		res += out_len;
+
+		/*
+		 * If the 4 bytes header does not fit to the rest of the page we
+		 * have to move to next one, or we read some garbage.
+		 */
+		mod_page = tot_in % PAGE_SIZE;
+		rem_page = PAGE_SIZE - mod_page;
+		if (rem_page < LZO_LEN) {
+			cbuf += rem_page;
+			tot_in += rem_page;
+			clen -= rem_page;
+			tot_len -= rem_page;
+		}
 	}
 
 	return res;
