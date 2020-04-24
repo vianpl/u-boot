@@ -146,6 +146,58 @@ int mach_cpu_init(void)
 }
 
 #ifdef CONFIG_ARMV7_LPAE
+
+#define BCM2711_RPI4_PCIE_XHCI_MMIO_VIRT	0xff800000UL
+
+void *rpi4_phys_to_virt(phys_addr_t paddr)
+{
+	if (paddr >= BCM2711_RPI4_PCIE_XHCI_MMIO_PHYS)
+		paddr = paddr - BCM2711_RPI4_PCIE_XHCI_MMIO_PHYS +
+			BCM2711_RPI4_PCIE_XHCI_MMIO_VIRT;
+	return (void *)(unsigned long)paddr;
+}
+
+static void set_section_phys(unsigned int section, phys_addr_t phys,
+			     enum dcache_option option)
+{
+	u64 *page_table = (u64 *)gd->arch.tlb_addr;
+	/* Need to set the access flag to not fault */
+	u64 value = TTB_SECT_AP | TTB_SECT_AF;
+
+	/* Add the page offset */
+	value |= (phys);
+
+	/* Add caching bits */
+	value |= option;
+
+	/* Set PTE */
+	page_table[section] = value;
+}
+
+static void rpi4_create_pcie_xhci_mapping(void)
+{
+	unsigned sect = BCM2711_RPI4_PCIE_XHCI_MMIO_VIRT >> MMU_SECTION_SHIFT;
+	phys_addr_t phys_addr = BCM2711_RPI4_PCIE_XHCI_MMIO_PHYS;
+	unsigned int size = BCM2711_RPI4_PCIE_XHCI_MMIO_SIZE;
+
+	while (size) {
+		set_section_phys(sect, phys_addr, DCACHE_OFF);
+		sect++;
+		phys_addr += MMU_SECTION_SIZE;
+		size -= MMU_SECTION_SIZE;
+	}
+}
+
+void arm_init_domains(void)
+{
+	/*
+	 * Hijack this function to prepare a mappings for the PCIe MMIO
+	 * region for the XHCI controller on RPi4 board.
+	 * This code is called before enabling the MMU in ARM 32bit mode.
+	 */
+	rpi4_create_pcie_xhci_mapping();
+}
+
 void enable_caches(void)
 {
 	dcache_enable();
