@@ -11,10 +11,15 @@
 #include <dm/device.h>
 #include <fdt_support.h>
 
+#define BCM2711_RPI4_PCIE_XHCI_MMIO_PHYS	0x600000000UL
+#define BCM2711_RPI4_PCIE_XHCI_MMIO_SIZE	0x800000UL
+
 #ifdef CONFIG_ARM64
 #include <asm/armv8/mmu.h>
 
-static struct mm_region bcm283x_mem_map[] = {
+#define MAX_MAP_MAX_ENTRIES (4)
+
+static struct mm_region bcm283x_mem_map[MAX_MAP_MAX_ENTRIES] = {
 	{
 		.virt = 0x00000000UL,
 		.phys = 0x00000000UL,
@@ -34,7 +39,7 @@ static struct mm_region bcm283x_mem_map[] = {
 	}
 };
 
-static struct mm_region bcm2711_mem_map[] = {
+static struct mm_region bcm2711_mem_map[MAX_MAP_MAX_ENTRIES] = {
 	{
 		.virt = 0x00000000UL,
 		.phys = 0x00000000UL,
@@ -45,6 +50,13 @@ static struct mm_region bcm2711_mem_map[] = {
 		.virt = 0xfc000000UL,
 		.phys = 0xfc000000UL,
 		.size = 0x03800000UL,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			 PTE_BLOCK_NON_SHARE |
+			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
+	}, {
+		.virt = BCM2711_RPI4_PCIE_XHCI_MMIO_PHYS,
+		.phys = BCM2711_RPI4_PCIE_XHCI_MMIO_PHYS,
+		.size = BCM2711_RPI4_PCIE_XHCI_MMIO_SIZE,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
 			 PTE_BLOCK_NON_SHARE |
 			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
@@ -71,7 +83,7 @@ static void _rpi_update_mem_map(struct mm_region *pd)
 {
 	int i;
 
-	for (i = 0; i < 2; i++) {
+	for (i = 0; i < MAX_MAP_MAX_ENTRIES; i++) {
 		mem_map[i].virt = pd[i].virt;
 		mem_map[i].phys = pd[i].phys;
 		mem_map[i].size = pd[i].size;
