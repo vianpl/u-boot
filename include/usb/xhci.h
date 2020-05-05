@@ -16,6 +16,7 @@
 #ifndef HOST_XHCI_H_
 #define HOST_XHCI_H_
 
+#include <usb.h>
 #include <asm/types.h>
 #include <asm/cache.h>
 #include <asm/io.h>
@@ -1280,5 +1281,7 @@ int xhci_register(struct udevice *dev, struct xhci_hccr *hccr,
 extern struct dm_usb_ops xhci_usb_ops;
 
 struct xhci_ctrl *xhci_get_ctrl(struct usb_device *udev);
+
+extern void xhci_pci_fixup(struct udevice *dev);
 
 #endif /* HOST_XHCI_H_ */
