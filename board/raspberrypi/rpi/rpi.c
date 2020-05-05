@@ -14,6 +14,7 @@
 #include <lcd.h>
 #include <memalign.h>
 #include <mmc.h>
+#include <usb/xhci.h>
 #include <asm/gpio.h>
 #include <asm/arch/mbox.h>
 #include <asm/arch/msg.h>
@@ -493,4 +494,9 @@ int ft_board_setup(void *blob, bd_t *bd)
 #endif
 
 	return 0;
+}
+
+void xhci_pci_fixup(struct udevice *dev)
+{
+	bcm2711_notify_vl805_reset();
 }
