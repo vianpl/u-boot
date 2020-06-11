@@ -10,8 +10,13 @@
 #include <init.h>
 #include <log.h>
 #include <pci.h>
+#include <reset.h>
 #include <usb.h>
 #include <usb/xhci.h>
+
+struct xhci_pci_platdata {
+	struct reset_ctl reset;
+};
 
 static void xhci_pci_init(struct udevice *dev, struct xhci_hccr **ret_hccr,
 			  struct xhci_hcor **ret_hcor)
@@ -39,12 +44,35 @@ static void xhci_pci_init(struct udevice *dev, struct xhci_hccr **ret_hccr,
 
 static int xhci_pci_probe(struct udevice *dev)
 {
+	struct xhci_pci_platdata *plat = dev_get_platdata(dev);
 	struct xhci_hccr *hccr;
 	struct xhci_hcor *hcor;
+	int ret;
+
+	ret = reset_get_by_index(dev, 0, &plat->reset);
+	if (!ret) {
+		ret = reset_assert(&plat->reset);
+		if (ret)
+			return ret;
+
+		ret = reset_deassert(&plat->reset);
+		if (ret)
+			return ret;
+	}
 
 	xhci_pci_init(dev, &hccr, &hcor);
 
 	return xhci_register(dev, hccr, hcor);
+}
+
+static int xhci_pci_remove(struct udevice *dev)
+{
+	struct xhci_pci_platdata *plat = dev_get_platdata(dev);
+
+	xhci_deregister(dev);
+	reset_free(&plat->reset);
+
+	return 0;
 }
 
 static const struct udevice_id xhci_pci_ids[] = {
@@ -56,10 +84,10 @@ U_BOOT_DRIVER(xhci_pci) = {
 	.name	= "xhci_pci",
 	.id	= UCLASS_USB,
 	.probe = xhci_pci_probe,
-	.remove = xhci_deregister,
+	.remove = xhci_pci_remove,
 	.of_match = xhci_pci_ids,
 	.ops	= &xhci_usb_ops,
-	.platdata_auto_alloc_size = sizeof(struct usb_platdata),
+	.platdata_auto_alloc_size = sizeof(struct xhci_pci_platdata),
 	.priv_auto_alloc_size = sizeof(struct xhci_ctrl),
 	.flags	= DM_FLAG_ALLOC_PRIV_DMA,
 };
