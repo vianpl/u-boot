@@ -762,7 +762,20 @@ static int pci_find_and_bind_driver(struct udevice *parent,
 	str = strdup(name);
 	if (!str)
 		return -ENOMEM;
-	drv = bridge ? "pci_bridge_drv" : "pci_generic_drv";
+
+	if (bridge) {
+		drv = "pci_bridge_drv";
+
+		/*
+		 * If we're dealing with the root bridge pass the parent device
+		 * node as there isn't a distinction in the device tree between
+		 * that and the actual controller platform device.
+		 */
+		if (!PCI_MASK_BUS(bdf))
+			node = parent->node;
+	} else {
+		drv = "pci_generic_drv";
+	}
 
 	ret = device_bind_driver_to_node(parent, drv, str, node, devp);
 	if (ret) {
