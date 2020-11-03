@@ -487,4 +487,12 @@ config NX_GPIO
 	  The GPIOs for a device are defined in the device tree with one node
 	  for each bank.
 
+config RASPBERRYPI_EXP_GPIO
+	bool "Rapberry Pi GPIO Expander Chip"
+	depends on DM_GPIO
+	help
+	  Support for Raspberry Pi expander GPIO chip. Only present in the
+	  Raspberry Pi 3 and 4 families of boards. The GPIO chip is interfaced
+	  with through the board's co-processor.
+
 endmenu

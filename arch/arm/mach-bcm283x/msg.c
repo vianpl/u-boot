@@ -6,8 +6,11 @@
 #include <common.h>
 #include <memalign.h>
 #include <phys2bus.h>
+#include <asm/gpio.h>
 #include <asm/arch/mbox.h>
 #include <linux/delay.h>
+
+#define RPI_EXP_GPIO_BASE	128
 
 struct msg_set_power_state {
 	struct bcm2835_mbox_hdr hdr;
@@ -46,6 +49,31 @@ struct msg_notify_vl805_reset {
 	struct bcm2835_mbox_tag_pci_dev_addr dev_addr;
 	u32 end_tag;
 };
+
+struct msg_gpio_get_config {
+	struct bcm2835_mbox_hdr hdr;
+	struct bcm2835_mbox_tag_gpio_get_config config;
+	u32 end_tag;
+};
+
+struct msg_gpio_set_config {
+	struct bcm2835_mbox_hdr hdr;
+	struct bcm2835_mbox_tag_gpio_set_config config;
+	u32 end_tag;
+};
+
+struct msg_gpio_get_state {
+	struct bcm2835_mbox_hdr hdr;
+	struct bcm2835_mbox_tag_gpio_get_state state;
+	u32 end_tag;
+};
+
+struct msg_gpio_set_state {
+	struct bcm2835_mbox_hdr hdr;
+	struct bcm2835_mbox_tag_gpio_set_state state;
+	u32 end_tag;
+};
+
 
 int bcm2835_power_on_module(u32 module)
 {
@@ -197,3 +225,115 @@ int bcm2711_notify_vl805_reset(void)
 	return 0;
 }
 
+int bcm2711_gpio_get_direction(unsigned offset)
+{
+	ALLOC_CACHE_ALIGN_BUFFER(struct msg_gpio_get_config,
+				 msg_gpio_get_config, 1);
+	int ret;
+
+	BCM2835_MBOX_INIT_HDR(msg_gpio_get_config);
+	BCM2835_MBOX_INIT_TAG(&msg_gpio_get_config->config, GPIO_GET_CONFIG);
+	msg_gpio_get_config->config.body.req.gpio = offset + RPI_EXP_GPIO_BASE;
+
+	ret = bcm2835_mbox_call_prop(BCM2835_MBOX_PROP_CHAN,
+				     &msg_gpio_get_config->hdr);
+	if (ret || msg_gpio_get_config->config.body.resp.error) {
+		printf("bcm2711: Failed to get gpio %d's direction\n", offset);
+		return -EIO;
+	}
+
+	return msg_gpio_get_config->config.body.resp.direction ? GPIOF_OUTPUT :
+							         GPIOF_INPUT;
+}
+
+static int bcm2711_gpio_get_polarity(unsigned offset)
+{
+	ALLOC_CACHE_ALIGN_BUFFER(struct msg_gpio_get_config,
+				 msg_gpio_get_config, 1);
+	int ret;
+
+	BCM2835_MBOX_INIT_HDR(msg_gpio_get_config);
+	BCM2835_MBOX_INIT_TAG(&msg_gpio_get_config->config, GPIO_GET_CONFIG);
+	msg_gpio_get_config->config.body.req.gpio = offset + RPI_EXP_GPIO_BASE;
+
+	ret = bcm2835_mbox_call_prop(BCM2835_MBOX_PROP_CHAN,
+				     &msg_gpio_get_config->hdr);
+	if (ret || msg_gpio_get_config->config.body.resp.error) {
+		printf("bcm2711: Failed to get gpio %d's polarity\n", offset);
+		return -EIO;
+	}
+
+	return msg_gpio_get_config->config.body.resp.polarity;
+}
+
+int bcm2711_gpio_set_direction(unsigned offset, bool out, unsigned value)
+{
+	ALLOC_CACHE_ALIGN_BUFFER(struct msg_gpio_set_config,
+				 msg_gpio_set_config, 1);
+	int polarity;
+	int ret;
+
+	polarity = bcm2711_gpio_get_polarity(offset);
+	if (polarity < 0)
+		return -EIO;
+
+	printf("bcm2711: Set %s, offset %d, value %d\n", out ? "out" : "in", offset, value);
+	BCM2835_MBOX_INIT_HDR(msg_gpio_set_config);
+	BCM2835_MBOX_INIT_TAG(&msg_gpio_set_config->config, GPIO_SET_CONFIG);
+	msg_gpio_set_config->config.body.req.gpio = offset + RPI_EXP_GPIO_BASE;
+	msg_gpio_set_config->config.body.req.direction = !!out;
+	msg_gpio_set_config->config.body.req.polarity = polarity;
+	msg_gpio_set_config->config.body.req.term_en = 0;
+	msg_gpio_set_config->config.body.req.term_pull_up = 0;
+	msg_gpio_set_config->config.body.req.state = out ? value : 0;
+
+	ret = bcm2835_mbox_call_prop(BCM2835_MBOX_PROP_CHAN,
+				     &msg_gpio_set_config->hdr);
+	if (ret || msg_gpio_set_config->config.body.resp.error) {
+		printf("bcm2711: Failed to set gpio %d's direction\n", offset);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int bcm2711_gpio_get_state(unsigned offset)
+{
+	ALLOC_CACHE_ALIGN_BUFFER(struct msg_gpio_get_state,
+				 msg_gpio_get_state, 1);
+	int ret;
+
+	BCM2835_MBOX_INIT_HDR(msg_gpio_get_state);
+	BCM2835_MBOX_INIT_TAG(&msg_gpio_get_state->state, GPIO_GET_STATE);
+	msg_gpio_get_state->state.body.req.gpio = offset + RPI_EXP_GPIO_BASE;
+
+	ret = bcm2835_mbox_call_prop(BCM2835_MBOX_PROP_CHAN,
+				     &msg_gpio_get_state->hdr);
+	if (ret || msg_gpio_get_state->state.body.resp.error) {
+		printf("bcm2711: Failed to get gpio %d's state\n", offset);
+		return -EIO;
+	}
+
+	return msg_gpio_get_state->state.body.resp.state;
+}
+
+int bcm2711_gpio_set_state(unsigned offset, unsigned value)
+{
+	ALLOC_CACHE_ALIGN_BUFFER(struct msg_gpio_set_state,
+				 msg_gpio_set_state, 1);
+	int ret;
+
+	BCM2835_MBOX_INIT_HDR(msg_gpio_set_state);
+	BCM2835_MBOX_INIT_TAG(&msg_gpio_set_state->state, GPIO_SET_STATE);
+	msg_gpio_set_state->state.body.req.gpio = offset + RPI_EXP_GPIO_BASE;
+	msg_gpio_set_state->state.body.req.state = value;
+
+	ret = bcm2835_mbox_call_prop(BCM2835_MBOX_PROP_CHAN,
+				     &msg_gpio_set_state->hdr);
+	if (ret || msg_gpio_set_state->state.body.resp.error) {
+		printf("bcm2711: Failed to set gpio %d's state\n", offset);
+		return -EIO;
+	}
+
+	return 0;
+}

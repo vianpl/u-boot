@@ -55,4 +55,8 @@ int bcm2835_set_video_params(int *widthp, int *heightp, int depth_bpp,
  */
 int bcm2711_notify_vl805_reset(void);
 
+int bcm2711_gpio_get_direction(unsigned offset);
+int bcm2711_gpio_set_direction(unsigned offset, bool out, unsigned value);
+int bcm2711_gpio_get_state(unsigned offset);
+int bcm2711_gpio_set_state(unsigned offset, unsigned value);
 #endif

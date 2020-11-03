@@ -504,6 +504,72 @@ struct bcm2835_mbox_tag_pci_dev_addr {
 	} body;
 };
 
+#define BCM2835_MBOX_TAG_GPIO_GET_CONFIG	    0x00030043
+
+struct bcm2835_mbox_tag_gpio_get_config {
+	struct bcm2835_mbox_tag_hdr tag_hdr;
+	union {
+		struct {
+			u32 gpio;
+		} req;
+		struct {
+			u32 error;
+			u32 direction;
+			u32 polarity;
+			u32 term_en;
+			u32 term_pull_up;
+		} resp;
+	} body;
+};
+#define BCM2835_MBOX_TAG_GPIO_SET_CONFIG	    0x00038043
+
+struct bcm2835_mbox_tag_gpio_set_config {
+	struct bcm2835_mbox_tag_hdr tag_hdr;
+	union {
+		struct {
+			u32 gpio;
+			u32 direction;
+			u32 polarity;
+			u32 term_en;
+			u32 term_pull_up;
+			u32 state;
+		} req;
+		struct {
+			u32 error;
+		} resp;
+	} body;
+};
+
+#define BCM2835_MBOX_TAG_GPIO_GET_STATE		    0x00030041
+
+struct bcm2835_mbox_tag_gpio_get_state {
+	struct bcm2835_mbox_tag_hdr tag_hdr;
+	union {
+		struct {
+			u32 gpio;
+		} req;
+		struct {
+			u32 error;
+			u32 state;
+		} resp;
+	} body;
+};
+
+#define BCM2835_MBOX_TAG_GPIO_SET_STATE		    0x00038041
+
+struct bcm2835_mbox_tag_gpio_set_state {
+	struct bcm2835_mbox_tag_hdr tag_hdr;
+	union {
+		struct {
+			u32 gpio;
+			u32 state;
+		} req;
+		struct {
+			u32 error;
+		} resp;
+	} body;
+};
+
 /*
  * Pass a raw u32 message to the VC, and receive a raw u32 back.
  *
