@@ -157,6 +157,11 @@ static const struct rpi_model rpi_models_new_scheme[] = {
 		DTB_DIR "bcm2711-rpi-4-b.dtb",
 		true,
 	},
+	[0x14] = {
+		"Compute Module 4",
+		DTB_DIR "bcm2711-rpi-cm4.dtb",
+		true,
+	},
 };
 
 static const struct rpi_model rpi_models_old_scheme[] = {
