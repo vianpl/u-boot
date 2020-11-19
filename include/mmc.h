@@ -699,6 +699,12 @@ struct mmc {
 	u32 quirks;
 };
 
+#if CONFIG_IS_ENABLED(DM_MMC)
+#define mmc_to_dev(_mmc)	_mmc->dev
+#else
+#define mmc_to_dev(_mmc)	NULL
+#endif
+
 struct mmc_hwpart_conf {
 	struct {
 		uint enh_start;	/* in 512-byte sectors */
