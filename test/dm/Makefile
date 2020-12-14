@@ -13,6 +13,7 @@ obj-$(CONFIG_UT_DM) += test-uclass.o
 # subsystem you must add sandbox tests here.
 obj-$(CONFIG_UT_DM) += core.o
 obj-$(CONFIG_UT_DM) += read.o
+obj-$(CONFIG_UT_DM) += phys2bus.o
 ifneq ($(CONFIG_SANDBOX),)
 obj-$(CONFIG_ACPIGEN) += acpi.o
 obj-$(CONFIG_ACPIGEN) += acpigen.o
