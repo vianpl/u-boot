@@ -12,6 +12,7 @@ obj-$(CONFIG_UT_DM) += test-uclass.o
 # Tests for particular subsystems - when enabling driver model for a new
 # subsystem you must add sandbox tests here.
 obj-$(CONFIG_UT_DM) += core.o
+obj-$(CONFIG_UT_DM) += read.o
 ifneq ($(CONFIG_SANDBOX),)
 obj-$(CONFIG_ACPIGEN) += acpi.o
 obj-$(CONFIG_ACPIGEN) += acpigen.o
