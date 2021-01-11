@@ -487,6 +487,7 @@
 		BOOTENV_SET_NVME_NEED_INIT                                \
 		BOOTENV_SET_IDE_NEED_INIT                                 \
 		BOOTENV_SET_VIRTIO_NEED_INIT                              \
+		"setenv serverip 192.168.1.77; "			  \
 		"for target in ${boot_targets}; do "                      \
 			"run bootcmd_${target}; "                         \
 		"done\0"
