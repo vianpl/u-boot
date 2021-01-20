@@ -97,6 +97,7 @@ int stdio_deregister_dev(struct stdio_dev *dev, int force);
 struct list_head *stdio_get_list(void);
 struct stdio_dev *stdio_get_by_name(const char *name);
 struct stdio_dev *stdio_clone(struct stdio_dev *dev);
+bool stdio_valid(struct stdio_dev *dev);
 
 int drv_lcd_init(void);
 int drv_video_init(void);

@@ -157,6 +157,17 @@ static int stdio_probe_device(const char *name, enum uclass_id id,
 	return 0;
 }
 
+bool stdio_valid(struct stdio_dev *dev)
+{
+	struct stdio_dev *sdev;
+
+	list_for_each_entry(sdev, &devs.list, list)
+		if (sdev == dev)
+			return true;
+
+	return false;
+}
+
 struct stdio_dev *stdio_get_by_name(const char *name)
 {
 	struct list_head *pos;
