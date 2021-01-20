@@ -252,6 +252,9 @@ static bool console_needs_start_stop(int file, struct stdio_dev *sdev)
 {
 	int i, j;
 
+	if (!stdio_valid(sdev))
+		return false;
+
 	for (i = 0; i < ARRAY_SIZE(cd_count); i++) {
 		if (i == file)
 			continue;
